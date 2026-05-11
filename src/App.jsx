@@ -475,7 +475,10 @@ function Contact() {
       });
 
       if (!response.ok) {
-        throw new Error('Le message n’a pas pu être envoyé.');
+        const errorPayload = await response.json().catch(() => ({}));
+        const error = new Error('Le message n’a pas pu être envoyé.');
+        error.code = errorPayload.code;
+        throw error;
       }
 
       form.reset();
@@ -484,7 +487,13 @@ function Contact() {
     } catch (error) {
       console.warn(error);
       setSubmitState('error');
-      setSubmitMessage('Une erreur est survenue. Vous pouvez aussi me contacter directement par email.');
+      if (error.code === 'missing_resend_key') {
+        setSubmitMessage('La clé Resend n’est pas encore configurée dans Vercel.');
+      } else if (error.code === 'resend_failed') {
+        setSubmitMessage('L’envoi email est bloqué côté Resend. Vérifiez la clé API ou l’adresse expéditeur.');
+      } else {
+        setSubmitMessage('Une erreur est survenue. Vous pouvez aussi me contacter directement par email.');
+      }
     }
   };
 

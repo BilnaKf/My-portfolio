@@ -38,6 +38,9 @@ Pour recevoir les emails, ajoute dans Vercel :
 - `CONTACT_TO_EMAIL`
 - `CONTACT_FROM_EMAIL`
 
+Pour tester rapidement avec Resend, garde `CONTACT_FROM_EMAIL` sur `Portfolio Nabil <onboarding@resend.dev>`.
+Si tu veux utiliser une adresse personnalisée en expéditeur, il faut d’abord vérifier un domaine dans Resend.
+
 Pour conserver les demandes dans Supabase, crée la table avec `supabase/contact_messages.sql`, puis ajoute aussi :
 
 - `VITE_SUPABASE_URL`

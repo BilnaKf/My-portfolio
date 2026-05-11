@@ -48,7 +48,9 @@ async function saveLead({ name, email, message, marketingConsent }) {
 
 async function sendEmail({ name, email, message, marketingConsent }) {
   if (!process.env.RESEND_API_KEY) {
-    throw new Error('RESEND_API_KEY is missing');
+    const error = new Error('RESEND_API_KEY is missing');
+    error.code = 'missing_resend_key';
+    throw error;
   }
 
   const html = `
@@ -76,7 +78,11 @@ async function sendEmail({ name, email, message, marketingConsent }) {
   });
 
   if (!response.ok) {
-    throw new Error('Resend email failed');
+    const details = await response.text();
+    console.error('Resend email failed:', details);
+    const error = new Error('Resend email failed');
+    error.code = 'resend_failed';
+    throw error;
   }
 }
 
@@ -96,12 +102,20 @@ export default async function handler(request, response) {
       return response.status(400).json({ error: 'Missing required fields' });
     }
 
-    await saveLead({ name, email, message, marketingConsent });
+    try {
+      await saveLead({ name, email, message, marketingConsent });
+    } catch (error) {
+      console.error('Supabase lead save failed:', error);
+    }
+
     await sendEmail({ name, email, message, marketingConsent });
 
     return response.status(200).json({ ok: true });
   } catch (error) {
     console.error(error);
-    return response.status(500).json({ error: 'Unable to send contact request' });
+    return response.status(500).json({
+      error: 'Unable to send contact request',
+      code: error.code || 'contact_failed',
+    });
   }
 }
