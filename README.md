@@ -30,11 +30,18 @@ Place ton vrai CV dans `public/cv.pdf` pour activer le bouton de téléchargemen
 
 ## Formulaire de contact
 
-Le formulaire envoie les messages vers l’email configuré dans `src/data/portfolio.js` via FormSubmit.
+Le formulaire envoie les messages sans redirection via la route Vercel `api/contact.js`.
 
-Optionnel : pour conserver les demandes dans Supabase, crée la table avec `supabase/contact_messages.sql`, puis ajoute ces variables dans Vercel :
+Pour recevoir les emails, ajoute dans Vercel :
+
+- `RESEND_API_KEY`
+- `CONTACT_TO_EMAIL`
+- `CONTACT_FROM_EMAIL`
+
+Pour conserver les demandes dans Supabase, crée la table avec `supabase/contact_messages.sql`, puis ajoute aussi :
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
-Le premier envoi FormSubmit peut demander une confirmation par email.
+`SUPABASE_SERVICE_ROLE_KEY` doit rester uniquement côté Vercel, jamais dans le code public.

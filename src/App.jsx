@@ -1,6 +1,8 @@
 import {
+  AlertCircle,
   ArrowUpRight,
   BadgeCheck,
+  CheckCircle,
   Code2,
   Download,
   Github,
@@ -16,7 +18,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { profile, projects, skills } from './data/portfolio';
-import { saveContactLead } from './lib/supabaseLeads';
 
 const navItems = [
   { label: 'Accueil', href: '#accueil' },
@@ -447,28 +448,44 @@ function Process() {
 
 function Contact() {
   const [submitState, setSubmitState] = useState('idle');
+  const [submitMessage, setSubmitMessage] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-
-    setSubmitState('saving');
-
-    try {
-      await saveContactLead({
-        name: formData.get('name'),
-        email: formData.get('email'),
-        message: formData.get('message'),
-        marketingConsent: formData.get('marketing_consent') === 'on',
-      });
-    } catch (error) {
-      console.warn(error);
-    }
+    const payload = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      message: formData.get('message'),
+      marketingConsent: formData.get('marketing_consent') === 'on',
+    };
 
     setSubmitState('sending');
-    form.submit();
+    setSubmitMessage('');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Le message n’a pas pu être envoyé.');
+      }
+
+      form.reset();
+      setSubmitState('success');
+      setSubmitMessage('Votre demande a bien été envoyée. Je vous répondrai rapidement.');
+    } catch (error) {
+      console.warn(error);
+      setSubmitState('error');
+      setSubmitMessage('Une erreur est survenue. Vous pouvez aussi me contacter directement par email.');
+    }
   };
 
   return (
@@ -485,13 +502,8 @@ function Contact() {
         <div className="contact-layout">
           <form
             className="contact-form"
-            action={`https://formsubmit.co/${profile.email}`}
-            method="POST"
             onSubmit={handleSubmit}
           >
-            <input type="hidden" name="_subject" value="Nouvelle demande depuis le portfolio" />
-            <input type="hidden" name="_captcha" value="false" />
-            <input type="hidden" name="_template" value="table" />
             <label>
               Nom
               <input type="text" name="name" placeholder="Votre nom" required />
@@ -508,13 +520,16 @@ function Contact() {
               <input type="checkbox" name="marketing_consent" />
               <span>J’accepte d’être recontacté par email pour ce projet ou de futures opportunités.</span>
             </label>
-            <button className="primary-button" type="submit" disabled={submitState !== 'idle'}>
+            <button className="primary-button" type="submit" disabled={submitState === 'sending'}>
               <Send size={17} />
-              {submitState === 'idle' ? 'Envoyer le message' : 'Envoi en cours...'}
+              {submitState === 'sending' ? 'Envoi en cours...' : 'Envoyer le message'}
             </button>
-            <p className="form-note">
-              Votre message est envoyé par email et peut être enregistré dans Supabase pour le suivi.
-            </p>
+            {submitMessage && (
+              <p className={`form-feedback ${submitState === 'success' ? 'success' : 'error'}`}>
+                {submitState === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                {submitMessage}
+              </p>
+            )}
           </form>
 
           <div className="contact-links">
